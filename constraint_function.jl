@@ -1,5 +1,4 @@
 include(ENV["MOLERING"]*"/gila/utils.jl")
-
 using LinearAlgebra, CUDA, GilaElectromagnetics, .Utils
 
 
@@ -17,7 +16,7 @@ function ConstraintFunction(n::Int; T=ComplexF32)
 	G = get_dense_G_matrix(load_greens_operator((n, n, n), (1//32, 1//32, 1//32), set_type=T, use_gpu=true))
 	size_G = size(G, 2)
 
-	V = T(1e3) * CUDA.Diagonal(CUDA.rand(T, size_G) .+ T(-0.5))
+	V = T(3) * CUDA.Diagonal(CUDA.ones(T, size_G))
 	O = CUDA.Diagonal(T.(CUDA.rand(real(T), size_G)))
 	R1 = CUDA.Diagonal(T.(CUDA.rand(real(T), size_G)))
 	R2 = CUDA.Diagonal(T.(CUDA.rand(real(T), size_G)))
@@ -26,12 +25,8 @@ function ConstraintFunction(n::Int; T=ComplexF32)
 	return ConstraintFunction{T}(G, V, O, S, R1, R2)
 end
 
-Base.eltype(C::ConstraintFunction) = eltype(C.G)
-Base.length(C::ConstraintFunction) = size(C.G, 1)
 
-function eval(C::ConstraintFunction, z::Complex)
-	T = eltype(C)
-	@assert typeof(z) == T
+function eval(C::ConstraintFunction{T}, z::T) where T
 	Sym = M::AbstractMatrix -> T(0.5) * (M + adjoint(M))
 	ASym = M::AbstractMatrix -> T(-0.5im) * (M - adjoint(M))
 
@@ -41,7 +36,16 @@ function eval(C::ConstraintFunction, z::Complex)
 
 	Z = ZTT + z * E
 	ZTS = T(0.5) * (C.R1 + T(im) * C.R2)
-	t = bicgstab_gpu(Z, ZTS * C.S)[1]
+	# t = bicgstab_gpu(Z, ZTS * C.S, max_iter=typemax(Int64), verbose=false)[1]
+	t = Z \ (ZTS * C.S)
 	return real(imag(C.S' * t) - t' * E * t)
 end
 Base.:*(C::ConstraintFunction, z::Complex) = eval(C, z)
+Base.eltype(C::ConstraintFunction) = eltype(C.G)
+Base.length(C::ConstraintFunction) = size(C.G, 1)
+
+
+function perturb(C::ConstraintFunction{T}, dx::T) where T
+	C.R1 += CUDA.Diagonal(T.(dx .* CUDA.rand(real(T), length(C))))
+	C.R2 += CUDA.Diagonal(T.(dx .* CUDA.rand(real(T), length(C))))
+end
