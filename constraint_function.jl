@@ -36,7 +36,6 @@ function eval(C::ConstraintFunction{T}, z::T) where T
 
 	Z = ZTT + z * E
 	ZTS = T(0.5) * (C.R1 + T(im) * C.R2)
-	# t = bicgstab_gpu(Z, ZTS * C.S, max_iter=typemax(Int64), verbose=false)[1]
 	t = Z \ (ZTS * C.S)
 	return real(imag(C.S' * t) - t' * E * t)
 end
