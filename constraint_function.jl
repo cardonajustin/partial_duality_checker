@@ -1,5 +1,5 @@
 include(ENV["MOLERING"]*"/gila/utils.jl")
-using LinearAlgebra, CUDA, GilaElectromagnetics, .Utils
+using LinearAlgebra, CUDA, GilaElectromagnetics, .Utils, JacobiDavidson
 
 
 mutable struct ConstraintFunction{T<:Complex}
@@ -23,6 +23,17 @@ function ConstraintFunction(n::Int; T=ComplexF32)
 	S = CUDA.rand(T, size_G)
 
 	return ConstraintFunction{T}(G, V, O, S, R1, R2)
+end
+
+
+function zero_est(C::ConstraintFunction{T}) where T
+	Sym = M::AbstractMatrix -> T(0.5) * (M + adjoint(M))
+	ASym = M::AbstractMatrix -> T(-0.5im) * (M - adjoint(M))
+
+	U = conj.(inv(C.V)) - adjoint(C.G)
+	ZTT = C.O + Sym(U * C.R1) + ASym(U * C.R2)
+	E = ASym(U)
+	return T(-minimum(eigvals(Array(ZTT), Array(E))))
 end
 
 
