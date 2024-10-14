@@ -1,35 +1,48 @@
 include("dual_check.jl")
-using Random, Serialization, Statistics, Plots, ProgressMeter, JacobiDavidson
+using Random, Serialization, Statistics, Plots, ProgressMeter
 
 # Random.seed!(0)
 # CURAND.seed!(0)
-# C = ConstraintFunction(2, T=ComplexF64)
-# x = range(247.5, 247.6, 100)
-# y = map(z-> C * eltype(C)(z), x)
-# println(C * zero_est(C))
-# display(plot(x, y))
+# C = ConstraintFunction(2)
+# z_g = 247.5949
+# x = range(247.5, 247.61, 100)
+# y = map(z-> C * z, x)
+# display(plot(real.(x), y))
 # readline()
-# 
+# c = norm(maximum(C.G))
+# perturb(C, 5e-2 * c)
+# y = map(z-> C * z, x)
+# display(plot(real.(x), y))
+# readline()
+# #  
 depth = 5
-dx = ComplexF32.([1e-3])
-l_init = 10
+dx = ComplexF32.([1e-4, 1e-3, 1e-2])
+l_init = 10:12
 params = collect(Iterators.product(dx, l_init))
-errs = zeros(Number, 1000, depth + length(params[1]))
+n = 100
+m = length(params)
+errs = zeros(Number, n * m, depth + length(params[1]))
 
-n = size(errs, 1)
-pb = Progress(n)
+pb = Progress(n*m)
+
+
+n_C = 12
+# Cs = [ConstraintFunction(n_C) for i in 1:n]
 for i in 1:n
-	for p in params
-		Random.seed!(1)
-		CURAND.seed!(1)
-		C = ConstraintFunction(2)
-		Random.seed!()
-		CURAND.seed!()
-		z_init = eltype(C)(247.5949)# zero_est(C)
-		# println(z_init)
-		z, e = optimize(C, z_init=z_init, dx = p[1], l_init=p[2], iter=5, window=20)
-		errs[i, :] = vcat(e[:, 2], collect(p))
+	C = ConstraintFunction(n_C)
+	for j in 1:m
 		next!(pb)
+		while true
+			try
+				z_init = zero_est(C) + eltype(C)(3)
+				z, e = optimize(C, z_init=z_init, dx = params[j][1], l_init=params[j][2], iter=5, window=20)
+				errs[((i - 1) * m) + j, :] = vcat(e[:, 2], collect(params[j]))
+				break
+			catch
+				C = ConstraintFunction(n_C)
+				continue
+			end
+		end
 	end
 end
 finish!(pb)
@@ -53,7 +66,8 @@ serialize("convergence.dat", errs)
 #		9 ->
 
 data = deserialize("convergence.dat")
+println(size(data))
 println(mean(data, dims=1))
 println(std(data, dims=1))
-display(histogram(data[:, 5]))
-readline()
+#display(histogram(data[:, 5]))
+#readline()

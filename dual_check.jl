@@ -2,46 +2,42 @@ include("constraint_function.jl")
 using BaryRational
 
 
-function find_zero(C::ConstraintFunction{T}; z_init::T=T(1.0), l_init::Int=10, domain=zeros(T, 1), codomain=zeros(real(T), 1), window::Int=20, points::Int=0, width::T=T(1)) where T
+function find_zero(C::ConstraintFunction{T}; z_init::T=zero_est(C), l_init::Int=10, domain=zeros(T, 1), codomain=zeros(real(T), 1), window::Int=20, points::Int=0, width::T=T(0.01), max_iter::Int=30) where T
 	err = typemax(real(T))
 	z = z_init
 	if length(domain) == 1
 		domain = width .* (rand(real(T), l_init) .- 0.5) .+ real(T)(z)
 		codomain = map(x-> C*T(x), domain)
+		ages = zeros(Int, l_init)
+	else
+		ages = zeros(Int, size(domain))
 	end
     
 	i = 0
-	while true
+	while i<=max_iter
 		err > cbrt(eps(real(T))) || break
 		i += 1
 
 		z = rand(real(T)) + real(T)(z - 0.5)
 		window = min(window, length(domain))
-		#TODO add age of the points and update them
 		domain = vcat(domain, [z])[end-window:end]
 		codomain = vcat(codomain, [C*T(z)])[end-window:end]
-		
+		ages = vcat(ages .+ 1, [0])
+
 		a = aaa(domain, codomain, clean=1)
 		_, _, zeros = prz(a)
-		r = 1 / (2 * MathConstants.e)
 		r = 1 / (MathConstants.e)
 		zeros = filter(x-> x>real(z_init * (1-r)) && x<real(z_init * (1+r)), real.(zeros))
 		try
-			# z1 = real(T)(zeros[end])
-			z1 = real(T)(zeros[1])
-			# z2 = real(T)(zeros[argmin(abs.(zeros .- z))])
-			z = T(z1)
-			# z = T(min(z1, z2))
-			# println("\t", i, ": ", norm(C*z), " at ", z)
-			# println("\t", zeros)
-			# readline()
+			z = T(zeros[1])
 			err = norm(C * z)
+			# println("\ti: ", i, " ", err)
 		catch
-			println("\tRestarting after ", i, " iterations.")
+			# println("\tRestarting after ", i, " iterations.")
 			return find_zero(C, z_init=T(z), l_init=l_init, window=window, points=i)
 		end
+		i < max_iter || throw("did not converge")
 	end
-	#TODO add sampling step here 
 	return real(z), err, domain, codomain, points+i
 end
 
@@ -52,7 +48,6 @@ function optimize(C::ConstraintFunction{T}; l_init::Int=typemax(Int), z_init::T=
 	errs[1, :] = [e, real(T)(p)]
 	for i in range(2, iter)
 		perturb(C, dx)
-		# println("Depth ", i)
 		z, e, domain, codomain, p = find_zero(C, z_init=z_init, domain=domain, codomain=codomain, window=window, width=dx)
 		errs[i, :] = [e, real(T)(p)]
 	end

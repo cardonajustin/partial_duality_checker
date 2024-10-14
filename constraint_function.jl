@@ -1,5 +1,5 @@
 include(ENV["MOLERING"]*"/gila/utils.jl")
-using LinearAlgebra, CUDA, GilaElectromagnetics, .Utils, JacobiDavidson
+using LinearAlgebra, CUDA, GilaElectromagnetics, .Utils, JacobiDavidson, Roots
 
 
 mutable struct ConstraintFunction{T<:Complex}
@@ -33,7 +33,20 @@ function zero_est(C::ConstraintFunction{T}) where T
 	U = conj.(inv(C.V)) - adjoint(C.G)
 	ZTT = C.O + Sym(U * C.R1) + ASym(U * C.R2)
 	E = ASym(U)
-	return T(-minimum(eigvals(Array(ZTT), Array(E))))
+	z_min = -minimum(eigvals(Array(ZTT), Array(E)))
+
+	
+	fx = ZeroProblem(x->C*T(x), (z_min, MathConstants.e^2 * z_min))
+	return T(solve(fx, Bisection(), verbose=false))
+end
+
+
+function get_ZTT(C::ConstraintFunction{T}) where T
+	Sym = M::AbstractMatrix -> T(0.5) * (M + adjoint(M))
+	ASym = M::AbstractMatrix -> T(-0.5im) * (M - adjoint(M))
+
+	U = conj.(inv(C.V)) - adjoint(C.G)
+	return C.O + Sym(U * C.R1) + ASym(U * C.R2)
 end
 
 
