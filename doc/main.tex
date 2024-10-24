@@ -1,0 +1,128 @@
+\documentclass[reprint]{revtex4-2}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{physics}
+\usepackage{hyperref}
+
+\newtheorem{definition}{Definition}
+\newtheorem{proposition}{Proposition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\bibliographystyle{plain}
+
+\newcommand{\sym}[1]{\text{Sym}\qty[#1]}
+\newcommand{\asym}[1]{\text{Asym}\qty[#1]}
+
+
+\begin{document}
+\title{Partial Dual Method for Solving QCQPs}
+\author{Justin Cardona}
+\affiliation{Engineering Physics Department, Polytechnique Montréal}
+\begin{abstract}
+\end{abstract}
+\maketitle
+
+
+\section{Introduction}
+\label{sec:introduction}
+In this work a numerical scheme is considered for performing inverse design. Firstly the volume where the device must lie is discretized (into a cartesian grid for example). A field in this perspective is represented by a vector with entries that correspond to the polarization current of each cell. For example, if a volume is divided into an $n\times n\times n$ grid then a polarization current can be represented using a vector in $\mathbb{C}^{3n^3}$. Additionally, they can be considered vectors in a Hilbert space with the following inner product:
+
+\begin{align}
+	\braket{F}{G} = \int_{\mathbb{R}^3} \dd[3]{x} F^*(x)\cdot G(x)
+	\label{eq:inner-product}
+\end{align}
+Strictly speaking, the Hilbert space being discussed has the above product where the vectors are all elements of $\mathbb{C}^{3n^3}$ that correspond to a physical current/field. In any case, discussing this directly is not particularly important for the rest of this discussion. What is important however, is that physical fields respect the symmetry, linearity, and positive definiteness requirements of a Hilbert space. This can be quickly verified using equation \ref{eq:inner-product}.
+
+\subsection{Problem Formulation}
+\label{ssec:formulation}
+With this in mind, consider the following quadratic program:
+
+\begin{align}
+	\max_{\ket{T}\in\mathbb{C}^{3n^3}} \Im\braket{S}{T} - \ev{O}{T}
+\end{align}
+In general, $\ket{S}$ can be any element in $\mathbb{C}^{3n^3}$ and $O$ is some general objective linear operator on the space. In the case of Purcell enhancement for example, $O=\asym{V^{-\dagger}}$ is an appropriate choice. Without loss of generality, it is convenient in the photonics context to have it represent the source field of the problem (which must be scattered to acheive the desired objective) explicitly. Given a source field $\ket{S}$ and a scattering potential $V$, the total field $\ket{T}$ produced is given by
+
+\begin{align}
+	\ket{T} = \qty(V^{-1} - G_0)^{-1}\ket{S},
+\end{align}
+where $G_0$ is the Green's function of Maxwell's equations for free space. To this objective function constraints are added to enforce power conservation using a hierarchical mean field approach\cite{molesky2020hierarchical}. This is done by considering connected clusters ($\vb{\Omega} = \qty{\Omega_k}_{k\in K}$) within the design domain and imposing constraints in one of the following forms $\forall \Omega_k\in\vb{\Omega}$:
+
+\begin{align}
+	\mel{S}{\mathbb{I}_{\Omega_k}}{T} &= \mel{T}{U\mathbb{I}_{\Omega_k}}{T}\\
+	\mel{S}{\mathbb{I}_{\Omega_k}}{R} &= \mel{R}{\mathbb{I}_{\Omega_k}}{R}\\
+	\mel{S}{\mathbb{I}_{\Omega_k}}{T} &= \mel{R}{\mathbb{I}_{\Omega_k}}{T}\\
+	\mel{S}{\mathbb{I}_{\Omega_k}}{R} &= \mel{T}{U\mathbb{I}_{\Omega_k}}{R}
+\end{align}
+Here $\mathbb{I}$ is an indicator function over its subscript and $U=V^{-\dagger}-G_o^\dagger$. In order to obtain bounds on this program P, the Lagrange dual program D(P) is considered, the corresponding Lagrangian is
+
+\begin{align}
+	\mathcal{L} = \mqty[\bra{T} & \bra{S}]\mqty[-Z^{TT} & Z^{TS} \\ Z^{ST} & 0]\mqty[\ket{T} \\ \ket{S}]
+\end{align}
+where
+
+\begin{align}
+	Z^{TT} &= O + \sym{U\Phi_1} + \asym{U\Phi_2}\\
+	Z^{TS} = Z^{ST*} &= \frac{1}{2}\qty(\Phi_1 + i\Phi_2)I.
+\end{align}
+In this notation $\Phi_1 \in \mathbb{R}_{\ge 0}^{n_1}$ and $\Phi_2 \in \mathbb{R}_{\ge 0}^{n_2}$ contain the Lagrange multipliers associated with the $n_1$ symmetric and $n_2$ antisymmetric cluster constraints. The dual function is then $\mathcal{G} = \max_{\ket{T}}\mathcal{L}\qty(\ket{T}, \Phi)$ for the dual program:
+
+\begin{align}
+	\text{D}\qty(P) = \inf_{\Phi} \mathcal{G}(\Phi)
+\end{align}
+This problem is typically solved using local methods (newton-like gradient descents for example). 
+
+\subsection{Issues and Partial Dual Perspective}
+\label{ssec:formulation}
+A notable feature of this problem is that $Z^{TT}$ is indefinite in general, so it may not have a global extremum and diverge in certain regions. In order to obtain a bound on the primal, these regions must be avoided so it must be verfied whether $Z^{TT}\succcurlyeq 0$ for each value of $\Phi$ tested. To do this explicitly requires finding the eigenvalues of the matrix, typically done with a Cholesky-like decoposition. The discretizations typically require $n$ in the hundreds, make doing this check at each point in the optimization far to costly.\\
+
+A common attempt to remedy this is to use the $\log\det Z^{TT}$ in order to ascertain when the boundary of the positive-definiteness is nearby. Assuming that $Z^{TT}$ is positive definite to begin with, when a value of $\Phi$ is chosen such that $Z^{TT}$ is close to being indefinite there will be eigenvalues that start to approach zero. Since the determinant is the product of the eigenvalues, it is naively expected that it also become very small. Therefore, the $\log\det$ is expected to become very large around the the boundary. The reason that this method is advantageous over eigenvalue solvers is that a Hutchinson trace estimator can be used ($\log\det Z^{TT} = \Tr\log Z^{TT}$). Briefly, for any square matrix $A\in\mathbb{C}^{m\times m}$ the Hutchinson trace estimator does probabilistic sampling over vector-matrix-vector products to estimate the trace:
+
+\begin{align}
+	\Tr_A\approx\frac{1}{N}\sum_{i=1}^N x^\dagger Ax,\ x\sim\qty{-1, 1}^m
+\end{align}
+This method, however is still too slow. In order to obtain relative error $\epsilon$ to probability $1-\delta$ the number of sample vectors needed is \cite{skorski2021modern}
+
+\begin{align}
+	N = \frac{2}{\epsilon^2}\qty(2+\frac{8\sqrt{2}}{3}\epsilon)\log\frac{2}{\delta}.
+\end{align}
+For reference a 99.9\% chance to have 0.1\% error needs 30 460 939 matrix vector products, and a 75\% chance to have 1\% error needs 84 746 matrix vector products. In order to avoid this expensive step another method must be employed to guarantee the points tested are within the positive definite domain. Therefore a modification of the dual function is considered (the \emph{Partial Dual} $\text{D}_\partial(\text{P})$), singling out one of the constraints,
+
+\begin{align}
+	&\mathcal{G}_\partial = \max_{\ket{T}}\mathcal{L}_\partial\qty(\ket{T}, \Phi)\\
+	\text{such that } &\Im\braket{S}{T} - \ev{E}{T}\ge 0
+\end{align}
+such that
+
+\begin{align}
+	\mathcal{L}_\partial = \mqty[\bra{T} & \bra{S}]\mqty[-Z^{TT}_\partial & Z^{TS}_\partial \\ Z^{ST}_\partial & 0]\mqty[\ket{T} \\ \ket{S}].
+\end{align}
+Here the $\partial$ subscript for the partial dual problem denotes that the quantity is the same as in the ordinary case, except for the fact that terms containing the dual constraint have been removed. If $Z^{T}_\partial\succcurlyeq 0$ then the problem is convex and no checking is required. In this case, $\text{D}_\partial(\text{P}) = \ev{Z^{TS}_\partial Z^{TT-1}_\partial Z^{TS}_\partial}{S}$ with the corresponding current $\ket{\vb{T}} = Z^{TT-1}_\partial Z^{TS}_\partial\ket{S}$.\\
+
+Therefore, the idea of this method is that a feasible $\zeta$ (the dual constraint's multiplier) must be chosen such that $Z^{TT}_\partial$ is positive definite. Note that $Z^{TT}_\partial = Z^{TT} + \zeta E$ and $Z^{TS}_\partial = Z^{TS} + \frac{1}{2}i\zeta I$ so the constraint function is implicitly dependant on $\zeta$, so it will hereafter be abbreviated to $C_\zeta$. With this notation, the goal is to have $\zeta$ such that
+
+\begin{align}
+	Z^{TT}+\zeta E&\succcurlyeq0\\
+	C_\zeta&\ge0
+\end{align}
+Since $E\succcurlyeq0$, $\exists\zeta\ge0$ such that $Z^{TT}_\partial\succcurlyeq0$. Next note that the derivative of the constraint areas follows:
+
+\begin{align}
+	\frac{dC_\zeta}{d\zeta} &= 2\qty(\frac{1}{2}\bra{S} - i\bra{T}E)Z^{TT-1}_\partial\qty(\frac{1}{2}\ket{S}+ iE\ket{T})\\
+	\frac{d^2C_\zeta}{d\zeta} &= -6\qty(\frac{1}{2}\bra{S} - i\bra{T}E)Z^{TT-1}_\partial E Z^{TT-1}_\partial\qty(\frac{1}{2}\ket{S}+ iE\ket{T})
+\end{align}
+Therefore if $Z^{TT}_\partial\succcurlyeq0$, then $C_\zeta$ must be increasing and concave. Furthermore, in the limit of large $\zeta$:
+
+\begin{align}
+	&\lim_{\zeta\rightarrow\infty}Z^{TT-1}_\partial = \qty(\zeta E)^{-1}\\
+	&\lim_{\zeta\rightarrow\infty}Z^{TS}_\partial = \frac{1}{2}i\zeta I\\
+	\implies&\lim_{\zeta\rightarrow\infty} C_\zeta = \ev{E^{-1}}{S}
+\end{align}
+Since $E\succcurlyeq0$, $C_\zeta$ asymptotes to a positive number. The combination of these properties of the constraint mean that if a zeta is chosen past the last crossing, it is feasible and makes the problem convex.
+
+\section{Padé Algorithm}
+\label{sec:algorithm}
+
+\bibliography{references}
+\end{document}
