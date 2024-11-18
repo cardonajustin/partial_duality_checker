@@ -63,21 +63,27 @@ function partial_dual_root(C::ConstraintFunction)
 end
 
 
-function pade_root(f, z_init::Float64; n_init::Int=2, max_iter::Int=5, r::Float64=1e-2, tol=eps(Float32))
-    domain = r .* rand(Float64, n_init) .+ z_init .- 0.5
-    codomain = map(f, domain)
-    inverse_solves = n_init
-    while true
-        for i in 1:max_iter
+function pade_root(f, z_init::Float64; n_init::Int=2, max_iter::Int=5, max_restart::Int=2, r::Float64=1e-2, tol=eps(Float32))
+    inverse_solves = 0
+    err = 0
+    for _ in 0:max_restart
+        domain = r .* rand(Float64, n_init) .+ z_init .- 0.5
+        codomain = map(f, domain)
+        inverse_solves += n_init
+        for _ in 1:max_iter
             a = aaa(domain, codomain, clean=1)
             _, _, zeros = prz(a)
             z = maximum(real.(zeros))
             err = f(z)
             inverse_solves += 1
             abs(err) > tol || return z, inverse_solves
+            println("\t\terr: "*string(err))
             domain = vcat(domain, [z])
             codomain = vcat(codomain, [err])
         end
+        println("\tPPD did not converge, resampling")
+        r /= 10
     end
+    throw("Pade Zero Finder did not converge")
 end
 end
