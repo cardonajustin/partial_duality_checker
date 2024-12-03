@@ -9,8 +9,8 @@ function zeros_perturbed(n_perturb::Int, n_volume::Int, dx::Float64=1e-2)
     g = partial_dual_root(C)
     for i in 1:n_perturb
 		println("\t" * string(i) * " perturbations")
-        C.P1 += dx .* CUDA.randn(ComplexF64, size(C.P1))
-        C.P2 += dx .* CUDA.randn(ComplexF64, size(C.P2))
+        C.a += CUDA.Diagonal(dx .* CUDA.randn(ComplexF64, size(C.a)))
+        C.b += CUDA.Diagonal(dx .* CUDA.randn(ComplexF64, size(C.b)))
         result = pade_root(C, g)
         zs[i] = result[1]
         ns[i] = result[2]
@@ -31,7 +31,7 @@ function stat_test(n_samples::Int, n_perturb::Int, n_volume::Int, dx::Float64=1e
                 zs[i, :] = result[1]
                 ns[i, :] = result[2]
                 break
-            catch
+            catch e
 				println("Restarting at sample " * string(i))
                 continue
             end
@@ -43,8 +43,9 @@ end
 
 n_samples = 100
 n_perturb = 10
-n_volume = 2
+n_volume = 4
 dx=1e-3
 zs, ns = stat_test(n_samples, n_perturb, n_volume, dx)
 serialize("data/zeros_"*string(n_volume)*"_"*string(dx)*".dat", zs)
 serialize("data/iters_"*string(n_volume)*"_"*string(dx)*".dat", ns)
+

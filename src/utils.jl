@@ -8,7 +8,7 @@ function fun_to_mat(A::Function, n::Int)
     for j in 1:n
         col = zeros(ComplexF64, n)
         col[j] = 1.0
-        result[:, j] = A(CuArray(col))
+        result[:, j] = CuArray(A(CuArray(col)))
     end
     return result
 end
