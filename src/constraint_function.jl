@@ -39,26 +39,32 @@ end
 function (C::ConstraintFunction)(z::Float64)
     LTT, E = get_LTT_E(C, z)
     LTS = 0.5 * (C.a + im * (C.b + z * I))
-    T = LTT \ LTS * C.S
+    T,_ = LTT \ (LTS * C.S)
     return real(imag(C.S' * T) - T' * E(T))
 end
 
 
 function partial_dual_root(C::ConstraintFunction)
     LTT, E = get_LTT_E(C, 0.0)
-    LTT = Array(fun_to_mat(LTT, size(C.G, 2)))
-    E = Array(fun_to_mat(E, size(C.G, 2)))
-    pschur, _ = jdqz(LTT, E, solver = GMRES(size(C.G, 2)), verbosity=0, pairs=1)
-    found = pschur.alphas ./ pschur.betas
-    if real(found[1]) > 0
-        pschur, _ = jdqz(LTT, E, solver = GMRES(size(C.G, 2)), verbosity=0, pairs=1, target=Near(-found[1]))
-        found = pschur.alphas ./ pschur.betas
-    end
-    if real(found[1]) > 0
-        return 0.0
-    end
-    p = real(-found[1])
-    fx = ZeroProblem(C, (p, 10 * p))
+    #LTT = Array(fun_to_mat(LTT, size(C.G, 2)))
+    #E = Array(fun_to_mat(E, size(C.G, 2)))
+    #pschur, _ = jdqz(LTT, E, solver = GMRES(size(C.G, 2)), verbosity=0, pairs=1)
+    #found = pschur.alphas ./ pschur.betas
+    #if real(found[1]) > 0
+    #    pschur, _ = jdqz(LTT, E, solver = GMRES(size(C.G, 2)), verbosity=0, pairs=1, target=Near(-found[1]))
+    #    found = pschur.alphas ./ pschur.betas
+    #end
+    #if real(found[1]) > 0
+    #    return 0.0
+    #end
+    #p = real(-found[1])
+	g = powm_gpu(LTT, E, size(C.G, 2))[1]
+	if real(g) > 0
+		g = powm_gpu(LTT, E, size(C.G, 2), g)[1]
+	end
+	g = -real(g)
+    fx = ZeroProblem(C, (g, 10 * g))
+    #fx = ZeroProblem(C, (p, 10 * p))
     return solve(fx, Bisection(), verbose=false)
 end
 
