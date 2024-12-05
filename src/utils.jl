@@ -3,16 +3,6 @@ using CUDA, LinearAlgebra, GilaElectromagnetics, JLD2
 export fun_to_mat, load_greens_operator, powm_gpu
 
 
-function fun_to_mat(A::Function, n::Int)
-    result = CUDA.zeros(ComplexF64, n, n)
-    for j in 1:n
-        col = zeros(ComplexF64, n)
-        col[j] = 1.0
-        result[:, j] = CuArray(A(CuArray(col)))
-    end
-    return result
-end
-
 similar_fill(v::AbstractArray{T}, fill_val::T) where T = fill!(similar(v), fill_val)
 similar_fill(v::AbstractArray{T}, dims::NTuple{N, Int}, fill_val::T) where {N, T} = fill!(similar(v, dims), fill_val)
 Base.:\(::Nothing, x::AbstractArray) = (x, 0)
@@ -22,20 +12,19 @@ function lmul_mvp!(y::AbstractVector, ::Nothing, x::AbstractVector)
 end
 
 function powm_gpu(A, B, n, s = 0, tol=1e-1, max_iter=1000)
-   x = CUDA.randn(ComplexF64, n)             # Start with a random vector
-   x ./= norm(x)             # Normalize x
-   λ_old = 0.0              # Initialize the eigenvalue
+   x = CUDA.randn(ComplexF64, n)
+   x ./= norm(x)
+   λ_old = 0.0
    M = x-> A(x) - s * B(x)
    for iter in 1:max_iter
-	   @show iter, λ_old# Solve Bv = Ax for v
+	   #@show λ_old
 	   v = M(x)
-	   x,_ = B \ v            # Solve linear system Bx = v
-	   x ./= norm(x)         # Normalize x
-	   λ = dot(x, M(x)) / dot(x, B(x))  # Rayleigh quotient
+	   x,_ = B \ v
+	   x ./= norm(x)
+	   λ = dot(x, M(x)) / dot(x, B(x))
 	   λ_shifted = λ + s
-	   # Check for convergence
 	   if abs(λ_shifted - λ_old) < tol
-		   println("Converged in $iter iterations.")
+		   #println("Converged in $iter iterations.")
 		   return λ_shifted, x
 	   end
 	   λ_old = λ_shifted
@@ -47,7 +36,7 @@ function bicgstab_gpu!(x::AbstractVector, op, b::AbstractVector; preconditioner=
 
     T = eltype(b)
 
-    mvp = 0 # mvp = matrix vector products
+    mvp = 0
 
     x = similar_fill(b, zero(T))
     ρ_prev = zero(T)
@@ -102,14 +91,14 @@ function bicgstab_gpu!(x::AbstractVector, op, b::AbstractVector; preconditioner=
 			println(num_iter, " ", norm(residual))
 		end
     end
-    throw("BiCGStab did not converge after $max_iter iterations.")
+    throw("BiCGStab did not converge after $max_iter iterations at $x.")
 end
 
 function bicgstab_gpu(op, b::AbstractVector; preconditioner=nothing, max_iter::Int=max(1000, length(b)), atol::Real=zero(real(eltype(b))), rtol::Real=eps(real(eltype(b))), verbose::Bool=false)
 	x = similar_fill(b, zero(eltype(b)))
 	return bicgstab_gpu!(x, op, b; preconditioner=preconditioner, max_iter=max_iter, atol=atol, rtol=rtol, verbose=verbose, initial_zero=true)
 end
-Base.:\(f::Function, x::AbstractArray) = bicgstab_gpu(f, x)#fun_to_mat(f, size(x, 1)) \ x
+Base.:\(f::Function, x::AbstractArray) = bicgstab_gpu(f, x)
 
 
 function load_greens_operator(cells::NTuple{3, Int}, scale::NTuple{3, Rational{Int}}; preload_dir="data")

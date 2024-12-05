@@ -18,10 +18,10 @@ function ConstraintFunction(n::Int=128)
     m = size(G, 2)
 
     X = CUDA.Diagonal(ComplexF64(rand(Float64) - 0.5 + 1e-3im * rand(Float64)) .* CUDA.ones(ComplexF64, m))
-    Q = CUDA.Diagonal(ComplexF64.(CUDA.rand(Float64, m)) .- ComplexF64(0.5))    
-    S = CUDA.rand(ComplexF64, m) .- ComplexF64(0.5) #TODO offset imaginary too
-    a = CUDA.Diagonal(ComplexF64.(CUDA.rand(Float64, m)))
-    b = CUDA.Diagonal(ComplexF64.(CUDA.rand(Float64, m)))
+    Q = CUDA.Diagonal(ComplexF64.(CUDA.ones(Float64, m)))    
+    S = CUDA.rand(ComplexF64, m) .- ComplexF64(0.5 + 0.5im)
+    a = CUDA.Diagonal(ComplexF64.(CUDA.ones(Float64, m)))
+    b = CUDA.Diagonal(ComplexF64.(CUDA.zeros(Float64, m)))
     return ConstraintFunction(G, X, Q, S, a, b)
 end
 
@@ -46,44 +46,36 @@ end
 
 function partial_dual_root(C::ConstraintFunction)
     LTT, E = get_LTT_E(C, 0.0)
-    #LTT = Array(fun_to_mat(LTT, size(C.G, 2)))
-    #E = Array(fun_to_mat(E, size(C.G, 2)))
-    #pschur, _ = jdqz(LTT, E, solver = GMRES(size(C.G, 2)), verbosity=0, pairs=1)
-    #found = pschur.alphas ./ pschur.betas
-    #if real(found[1]) > 0
-    #    pschur, _ = jdqz(LTT, E, solver = GMRES(size(C.G, 2)), verbosity=0, pairs=1, target=Near(-found[1]))
-    #    found = pschur.alphas ./ pschur.betas
-    #end
-    #if real(found[1]) > 0
-    #    return 0.0
-    #end
-    #p = real(-found[1])
-	g = powm_gpu(LTT, E, size(C.G, 2))[1]
+	g, _ = powm_gpu(LTT, E, size(C.G, 2))
 	if real(g) > 0
-		g = powm_gpu(LTT, E, size(C.G, 2), g)[1]
+		g, _ = powm_gpu(LTT, E, size(C.G, 2), g)
 	end
 	g = -real(g)
-    fx = ZeroProblem(C, (g, 10 * g))
-    #fx = ZeroProblem(C, (p, 10 * p))
-    return solve(fx, Bisection(), verbose=false)
+	return pade_root(C, g + sqrt(abs(g)))
 end
 
 
-function pade_root(f, z_init::Float64; n_init::Int=1, max_iter::Int=5, max_restart::Int=2, r::Float64=1e-2, tol=eps(Float32))
+function pade_root(f, z_init::Float64; n_init::Int=1, max_iter::Int=5, max_restart::Int=5, r::Float64=1e-2, tol=eps(Float32))
     inverse_solves = 0
     err = 0
     for _ in 0:max_restart
-        domain = r .* rand(Float64, n_init) .+ z_init .- 0.5
-        domain = vcat(domain, [z_init])
-        codomain = map(f, domain)
+		r = min(abs(err), r)
+		err_init = f(z_init)
+		z = rand(Float64) + z_init - 0.5
+		if err > 0
+			z -= 1.0
+		end
+		err = f(z)
+        domain = [z, z_init]
+        codomain = [err, err_init]
         inverse_solves += n_init
         for _ in 1:max_iter
+            abs(err) > tol || return z, inverse_solves
             a = aaa(domain, codomain, clean=1)
             _, _, zeros = prz(a)
             z = maximum(real.(zeros))
             err = f(z)
             inverse_solves += 1
-            abs(err) > tol || return z, inverse_solves
             println("\t\terr: "*string(err))
             domain = vcat(domain, [z])
             codomain = vcat(codomain, [err])

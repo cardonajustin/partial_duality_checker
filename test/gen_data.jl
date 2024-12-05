@@ -6,7 +6,8 @@ function zeros_perturbed(n_perturb::Int, n_volume::Int, dx::Float64=1e-2)
     zs = zeros(ComplexF64, n_perturb)
     ns = zeros(Int, n_perturb)
     C = ConstraintFunction(n_volume)
-    g = partial_dual_root(C)
+    g, _ = partial_dual_root(C)
+	println("initial guess done")
     for i in 1:n_perturb
 		println("\t" * string(i) * " perturbations")
         C.a += CUDA.Diagonal(dx .* CUDA.randn(ComplexF64, size(C.a)))
@@ -32,6 +33,7 @@ function stat_test(n_samples::Int, n_perturb::Int, n_volume::Int, dx::Float64=1e
                 ns[i, :] = result[2]
                 break
             catch e
+				@show e
 				println("Restarting at sample " * string(i))
                 continue
             end

@@ -1,7 +1,7 @@
 using Serialization, Statistics, Plots
 
 
-n_volume = 4
+n_volume = 2
 dx=1e-3
 zs = deserialize("data/zeros_"*string(n_volume)*"_"*string(dx)*".dat")
 ns = deserialize("data/iters_"*string(n_volume)*"_"*string(dx)*".dat")
