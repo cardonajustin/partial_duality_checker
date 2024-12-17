@@ -1,4 +1,30 @@
-\begin{thebibliography}{1}
+\begin{thebibliography}{10}
+
+\bibitem{boyd2004convex}
+Stephen Boyd and Lieven Vandenberghe.
+\newblock {\em Convex optimization}.
+\newblock Cambridge university press, 2004.
+
+\bibitem{elesin2012design}
+Yuriy Elesin, Boyan~Stefanov Lazarov, Jakob~S{\o}ndergaard Jensen, and Ole
+  Sigmund.
+\newblock Design of robust and efficient photonic switches using topology
+  optimization.
+\newblock {\em Photonics and nanostructures-Fundamentals and Applications},
+  10(1):153--165, 2012.
+
+\bibitem{ganapati2013light}
+Vidya Ganapati, Owen~D Miller, and Eli Yablonovitch.
+\newblock Light trapping textures designed by electromagnetic optimization for
+  subwavelength thick solar cells.
+\newblock {\em IEEE Journal of Photovoltaics}, 4(1):175--182, 2013.
+
+\bibitem{markkanen2012discretization}
+Johannes Markkanen, Pasi Yla-Oijala, and Ari Sihvola.
+\newblock Discretization of volume integral equation formulations for extremely
+  anisotropic materials.
+\newblock {\em IEEE Transactions on Antennas and Propagation},
+  60(11):5195--5202, 2012.
 
 \bibitem{molesky2020global}
 Sean Molesky, Pengning Chao, Weiliang Jin, and Alejandro~W Rodriguez.
@@ -17,10 +43,45 @@ Yuji Nakatsukasa, Olivier S{\`e}te, and Lloyd~N Trefethen.
 \newblock The aaa algorithm for rational approximation.
 \newblock {\em SIAM Journal on Scientific Computing}, 40(3):A1494--A1522, 2018.
 
+\bibitem{roux2016formal}
+Pierre Roux.
+\newblock Formal proofs of rounding error bounds: With application to an
+  automatic positive definiteness check.
+\newblock {\em Journal of Automated Reasoning}, 57:135--156, 2016.
+
+\bibitem{rump2006verification}
+Siegfried~M Rump.
+\newblock Verification of positive definiteness.
+\newblock {\em BIT Numerical Mathematics}, 46:433--452, 2006.
+
+\bibitem{schnabel1990new}
+Robert~B Schnabel and Elizabeth Eskow.
+\newblock A new modified cholesky factorization.
+\newblock {\em SIAM Journal on Scientific and Statistical Computing},
+  11(6):1136--1158, 1990.
+
+\bibitem{shen2014ultra}
+Bing Shen, Peng Wang, Randy Polson, and Rajesh Menon.
+\newblock Ultra-high-efficiency metamaterial polarizer.
+\newblock {\em Optica}, 1(5):356--360, 2014.
+
 \bibitem{skorski2021modern}
 Maciej Skorski.
 \newblock Modern analysis of hutchinson's trace estimator.
 \newblock In {\em 2021 55th Annual Conference on Information Sciences and
   Systems (CISS)}, pages 1--5. IEEE, 2021.
+
+\bibitem{van1992bi}
+Henk~A Van~der Vorst.
+\newblock Bi-cgstab: A fast and smoothly converging variant of bi-cg for the
+  solution of nonsymmetric linear systems.
+\newblock {\em SIAM Journal on scientific and Statistical Computing},
+  13(2):631--644, 1992.
+
+\bibitem{xue2023fullwave}
+Wenjin Xue, Hanwen Zhang, Abinand Gopal, Vladimir Rokhlin, and Owen~D Miller.
+\newblock Fullwave design of cm-scale cylindrical metasurfaces via fast direct
+  solvers.
+\newblock {\em arXiv preprint arXiv:2308.08569}, 2023.
 
 \end{thebibliography}

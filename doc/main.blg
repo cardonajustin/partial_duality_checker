@@ -4,44 +4,46 @@ The top-level auxiliary file: main.aux
 The style file: plain.bst
 Database file #1: mainNotes.bib
 Database file #2: references.bib
-You've used 4 entries,
+Warning--I didn't find a database entry for "trefethen2022numerical"
+You've used 14 entries,
             2118 wiz_defined-function locations,
-            524 strings with 4787 characters,
-and the built_in function-call counts, 1490 in all, are:
-= -- 146
-> -- 66
+            593 strings with 6647 characters,
+and the built_in function-call counts, 4846 in all, are:
+= -- 484
+> -- 223
 < -- 1
-+ -- 27
-- -- 22
-* -- 116
-:= -- 250
-add.period$ -- 13
-call.type$ -- 4
-change.case$ -- 23
++ -- 90
+- -- 74
+* -- 375
+:= -- 821
+add.period$ -- 43
+call.type$ -- 14
+change.case$ -- 78
 chr.to.int$ -- 0
-cite$ -- 4
-duplicate$ -- 52
-empty$ -- 119
-format.name$ -- 22
-if$ -- 309
+cite$ -- 14
+duplicate$ -- 162
+empty$ -- 376
+format.name$ -- 74
+if$ -- 984
 int.to.chr$ -- 0
-int.to.str$ -- 4
-missing$ -- 4
-newline$ -- 23
-num.names$ -- 8
-pop$ -- 20
+int.to.str$ -- 14
+missing$ -- 15
+newline$ -- 73
+num.names$ -- 28
+pop$ -- 64
 preamble$ -- 1
-purify$ -- 19
+purify$ -- 65
 quote$ -- 0
-skip$ -- 33
+skip$ -- 103
 stack$ -- 0
-substring$ -- 110
-swap$ -- 10
+substring$ -- 373
+swap$ -- 20
 text.length$ -- 1
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 16
+type$ -- 54
 warning$ -- 0
-while$ -- 15
-width$ -- 5
-write$ -- 47
+while$ -- 51
+width$ -- 16
+write$ -- 155
+(There was 1 warning)
